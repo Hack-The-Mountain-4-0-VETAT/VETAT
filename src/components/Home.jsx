@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { useEffect } from 'react';
+import { PriceChangeOutlined } from '@mui/icons-material';
 
 
 export default function Home() {
@@ -14,8 +15,9 @@ export default function Home() {
   const token = useSelector(state => state.Token.Token);
   const [open, setOpen] = useState(false);
   const [price,setPrice]=useState(0);
-  const [checked, setChecked] = useState(true);
-  const [value, setValue] = useState('Buy');
+  // const [checked, setChecked] = useState(true);
+  const [quantity,setQuan]=useState(0);
+  const [newPrice,setNewPrice]=useState(0);
   const [play,setPlay]=useState(false);
 
   const handleClickOpen = () => {
@@ -34,10 +36,37 @@ export default function Home() {
     }, 1000);
   }, [price])
 
+  const order = async () => {
+    const response = await fetch("https://backend-chi-eosin.vercel.app/api/order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        "user": token,
+        "type": "Sell",
+        "quantity": quantity,
+        "price": newPrice
+      }),
+    });
+    console.log(response)
+  }
+
   const handleClose = () => {
     setOpen(false);
-    setValue('Buy')
-    setChecked(true)
+    // setChecked(true)
+  };
+
+  const handlesubmit = async() => {
+    setOpen(false);
+    // setChecked(true);
+    if(quantity===0){
+      alert("Please set Quantity");
+    }else{
+      if(newPrice==0)setNewPrice(price);
+      await order();
+    }
+
   };
 
   function simulateStockPrice() {
@@ -53,10 +82,6 @@ export default function Home() {
     return price;
   }
 
-  const handleCheck = (event) => {
-    setChecked(event.target.checked)
-    setValue(checked == true ? "Sell" : "Buy")
-  }
 
   function showForm() {
     return (
@@ -68,7 +93,7 @@ export default function Home() {
       >
         <DialogTitle id="alert-dialog-title"
         >
-          <Box style={{ fontSize: "18px" }}>Current Electricity rate: 350.2</Box>
+          <Box style={{ fontSize: "18px" }}>Current Electricity rate: {price}</Box>
         </DialogTitle>
         <DialogContent>
           <Grid container xs={12}>
@@ -86,16 +111,16 @@ export default function Home() {
               {value}
             </Grid> */}
             <Grid item xs={6}>
-              <TextField sx={{ color: "white" }} id="filled-password-input" label="Quantity" variant="standard" />
+              <TextField value={quantity} onChange={(e)=>{setQuan(e.target.value);}} sx={{ color: "white" }} id="filled-password-input" label="Quantity" variant="standard" />
             </Grid>
             <Grid item xs={6}>
-              <TextField id="filled-password-input" label="Price (0 = Market Value)" variant="standard" />
+              <TextField value={newPrice} onChange={(e)=>{setNewPrice(e.target.value);}} id="filled-password-input" label="Price (0 = Market Value)" variant="standard" />
             </Grid>
 
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Submit</Button>
+          <Button onClick={handlesubmit}>Submit</Button>
           <Button onClick={handleClose} autoFocus>Cancel</Button>
         </DialogActions>
       </Dialog>
