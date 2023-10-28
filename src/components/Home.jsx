@@ -46,7 +46,7 @@ export default function Home() {
         "user": token,
         "type": "Sell",
         "quantity": quantity,
-        "price": newPrice
+        "price": newPrice===0?price:newPrice,
       }),
     });
     console.log(response)
@@ -63,7 +63,6 @@ export default function Home() {
     if(quantity===0){
       alert("Please set Quantity");
     }else{
-      if(newPrice==0)setNewPrice(price);
       await order();
     }
 
