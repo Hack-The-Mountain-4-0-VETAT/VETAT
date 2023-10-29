@@ -9,7 +9,7 @@ import Container from '@mui/material/Container';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
-import Badge from '@mui/material/Badge';
+// import Badge from '@mui/material/Badge';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
 import Cookies from 'js-cookie';
@@ -98,9 +98,7 @@ function Navbar() {
                     </Box>
                     <Button sx={{ borderRadius: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }} variant="text">
                         <Tooltip title="Notifications">
-                            <Badge badgeContent={4} color="error">
                                 <NotificationsNoneOutlinedIcon />
-                            </Badge>
                         </Tooltip>
                     </Button>
                     <Box sx={{ flexGrow: 0 }}>
