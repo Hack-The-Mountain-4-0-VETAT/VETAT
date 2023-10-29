@@ -43,7 +43,7 @@ export default function Login() {
     }
     return (
         <>
-            {/* <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
                 <form style={{ width: "70%" }}>
                     <h1>Login</h1>
                     <div className="mb-3">
@@ -61,8 +61,8 @@ export default function Login() {
                     <p style={{ marginLeft: 20 }} onClick={() => { navigate("/Login") }}>Don't have an account? Create one</p>
 
                 </form>
-            </div> */}
-            <body>
+            </div>
+            {/* <body>
                 <div class="container8">
                     <div class="screen9">
                         <div class="screen__content">
@@ -83,7 +83,7 @@ export default function Login() {
                             </form>
                             <div class="social-login">
                                 <h4>Don't have an account?</h4>
-                                <b><p  style={{color:"blue"}} onClick={() => { navigate("/login") }}>Sign up</p></b>
+                                <button type="submit" onClick={clicked} className="btn btn-primary">Submit</button>
 
 
                             </div>
@@ -98,7 +98,7 @@ export default function Login() {
                     </div>
                 </div>
 
-            </body>
+            </body> */}
         </>
     )
 }

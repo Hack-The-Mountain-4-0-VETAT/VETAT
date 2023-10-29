@@ -60,7 +60,7 @@ export default function Signup() {
     }
     return (
         <>
-            {/* <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
                 <form style={{ width: "70%" }}>
                     <h1>Signup</h1>
                     <div className="mb-3">
@@ -75,9 +75,9 @@ export default function Signup() {
                     <button type="submit" onClick={clicked} className="btn btn-primary">Submit</button>
                     <a onClick={() => { navigate("/") }}>already have an account? Login</a>
                 </form>
-            </div> */}
+            </div>
 
-            <body>
+            {/* <body>
                 <div class="container8">
                     <div class="screen9">
                         <div class="screen__content">
@@ -113,7 +113,7 @@ export default function Signup() {
                     </div>
                 </div>
 
-            </body>
+            </body> */}
         </>
     )
 }
