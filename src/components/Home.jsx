@@ -111,26 +111,24 @@ export default function Home() {
   }
   
   const handleBought = async (e) => {
+    // console.log(allOrder[e.target.value]._id);
     setBalance(balance + allOrder[e.target.value].Quantity)
     dispatch(addBalance({balance:balance}));
-    const filteredOrder=allOrder.filter((i)=>{
-      return(allOrder[e.target.value]._id!==i._id);
-    })
-    setAllOrder(filteredOrder);
+    // const filteredOrder=allOrder.filter((i)=>{
+    //   return(allOrder[e.target.value]._id!==i._id);
+    // })
+    // setAllOrder(filteredOrder);
+    
+    await fetch("https://backend-chi-eosin.vercel.app/api/remove", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        "user": allOrder[e.target.value]._id,
+      }),
+    });
     handleClose();
-    // const response = await fetch("https://backend-chi-eosin.vercel.app/api/bought", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     "user": token,
-    //     "order": e.target.value,
-    //   }),
-    // });
-    // console.log(e.target.value);
-    // const data=await response.json();
-    // console.log(data)
   }
   const handleClose1 = () => {
     setOpen1(false);
