@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { login, reset } from '../firebase/auth';
 import { addToken } from '../redux/auth';
 import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 export default function Login() {
 
@@ -11,6 +12,13 @@ export default function Login() {
     const [pass, setPass] = useState("");
     const dispatch = useDispatch();
 
+    useEffect(() => {
+        const token = Cookies.get('token');
+        if (token) {
+            dispatch(addToken({ token: token }));
+            navigate('/main')
+        }
+    }, [])
     // const reset = async (e) => {
     //     // e.preventDefault();
     //     try {
@@ -26,14 +34,13 @@ export default function Login() {
         try {
             const data = await login({ email: email, password: pass, returnSecureToken: true });
             dispatch(addToken({ token: data.data.idToken }))
-            console.log(data.data.idToken);   //////////
+            console.log(data.data);   //////////
+            Cookies.set('token', data.data.idToken, { expires: 30 });
             navigate('/main')
         } catch (error) {
             console.log(error);
         }
     }
-    const token = useSelector((state) => state.Token.Token); 
-    console.log(token);   //////////
     return (
         <>
             <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
@@ -52,7 +59,7 @@ export default function Login() {
                     </div>
                     <button style={{ marginLeft: 20 }} onClick={(e) => { e.preventDefault(); reset({ requestType: "PASSWORD_RESET", email: email }) }}>reset password</button>
                     <button type="submit" onClick={clicked} className="btn btn-primary">Submit</button>
-                    <p style={{ marginLeft: 20 }} onClick={() => { navigate("/") }}>Don't have an account? Create one</p>
+                    <p style={{ marginLeft: 20 }} onClick={() => { navigate("/Login") }}>Don't have an account? Create one</p>
 
                 </form>
             </div>

@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { signup } from '../firebase/auth';
 import { addToken } from '../redux/auth';
 import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 export default function Signup() {
 
@@ -11,17 +12,51 @@ export default function Signup() {
     const [pass, setPass] = useState("");
     const dispatch = useDispatch();
 
+    useEffect(() => {
+        const token = Cookies.get('token');
+        if (token) {
+            dispatch(addToken({ token: token }));
+            navigate('/main')
+        }
+    }, [])
+
+    
+
+    // const account = async (token) => {
+    //     const response = await fetch("http://localhost:4000/api/login", {
+    //         method: "POST",
+    //         headers: {
+    //         "Content-Type": "application/json",
+    //         },
+    //         body: JSON.stringify({
+    //         "user": token,
+    //         }),
+    //     });
+    //     // console.log(e.target.value);
+    //     const pardata=await response.json();
+    //     console.log(pardata)
+    // }
+
     const clicked = async (e) => {
         e.preventDefault();
         try {
             const data = await signup({ email: email, password: pass, returnSecureToken: true });
             dispatch(addToken({ token: data.data.idToken }))
+            Cookies.set('token', data.data.idToken, { expires: 30 });
+            // await fetch("http://localhost:4000/api/login", {
+            //     method: "POST",
+            //     headers: {
+            //     "Content-Type": "application/json",
+            //     },
+            //     body: JSON.stringify({
+            //     "user": data.data.idToken,
+            //     }),
+            // });
             navigate('/main')
         } catch (error) {
             console.log(error);
         }
     }
-    const token = useSelector((state) => state.Token.Token);
     return (
         <>
             <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
@@ -38,7 +73,7 @@ export default function Signup() {
                         <input value={pass} onChange={(e) => { setPass(e.target.value) }} type="password" className="form-control" id="exampleInputPassword1" />
                     </div>
                     <button type="submit" onClick={clicked} className="btn btn-primary">Submit</button>
-                    <a onClick={() => { navigate("/Login") }}>already have an account? Login</a>
+                    <a onClick={() => { navigate("/") }}>already have an account? Login</a>
                 </form>
             </div>
         </>

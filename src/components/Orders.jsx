@@ -1,48 +1,43 @@
 import { useEffect, useState } from "react";
-import MaterialTable from "@material-table/core";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Tooltip } from "@mui/material";
-import { TextField, Grid, IconButton, FormControl, InputLabel, MenuItem, Select, Switch } from "@mui/material";
-import { PhotoCamera, Close } from "@mui/icons-material";
 
-export default function Orders(){
-
-    function showOrders(){
-        return(
-            <MaterialTable
-                    // height="50%"
-                    title="Current Electricity rate: 235.5"
-                    columns={[
-                        { title: 'Type', field: 'type' },
-                        { title: 'Quantity', field: 'qty' },
-                        { title: 'Status', field: 'status' },
-                        { title: 'Rate', field: 'rate' },
-                        
-                    ]}
-                    data={[
-                        { type:'Buy', qty: '20 unit', status: 'pending exchange', rate: "9/-" },
-                      ]}
-                      actions={[
-                        {
-                            icon: 'edit',
-                            tooltip: 'Edit User',
-                            onClick: (event, rowData) => alert("You want to delete " + rowData.name)
-                        },
-                        {
-                            icon: 'delete',
-                            tooltip: 'Delete User',
-                            onClick: (event, rowData) => alert("You want to delete " + rowData.name)
-                        }
-                    ]}
-                    options={{
-                        actionsColumnIndex: -1
-                    }}
-                />
-        )
-    }
-
-    return(
+export default function Orders() {
+    return (
         <div>
-            {showOrders()}
+            <body class="bg-black min-h-screen">
+                <div class="navbar bg-slate-400 text-white">
+                    <div class="flex-1 justify-center">
+                        <a class="normal-case text-3xl">Orders</a>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap justify-center">
+                    <div class="card ju w-full m-5 bg-neutral text-neutral-content">
+                        <div class="card-body ">
+                            <h2 class="card-title">Quantity: 30</h2>
+                            <h2 class="card-title">Price: 7.43</h2>
+                            <p class="text-xs">Date: 7/8/22</p>
+                            <div class="card-actions justify-evenly">
+                                <div class="btn bg-green-600">BUY</div>
+                                <button class="btn btn-primary">Modify</button>
+                                <button class="btn btn-ghost">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card ju w-full m-5 bg-neutral text-neutral-content">
+                        <div class="card-body ">
+                            <h2 class="card-title">Quantity: 30</h2>
+                            <h2 class="card-title">Price: 7.43</h2>
+                            <p class="text-xs">Date: 7/8/22</p>
+                            <div class="card-actions justify-evenly">
+                                <div class="btn bg-red-600">BUY</div>
+                                <button class="btn btn-primary">Modify</button>
+                                <button class="btn btn-ghost">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </body>
         </div>
     )
 }

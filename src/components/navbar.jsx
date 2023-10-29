@@ -12,6 +12,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Badge from '@mui/material/Badge';
 import MenuItem from '@mui/material/MenuItem';
 import AdbIcon from '@mui/icons-material/Adb';
+import Cookies from 'js-cookie';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import { useNavigate } from 'react-router';
 
@@ -126,7 +127,7 @@ function Navbar() {
                             onClose={e => { setAnchorElUser(null); }}
                         >
                             {settings.map((setting) => (
-                                <MenuItem key={setting.title} onClick={e => { setAnchorElUser(null); navigate(setting.link) }}>
+                                <MenuItem key={setting.title} onClick={e => { setAnchorElUser(null);Cookies.remove('token'); navigate(setting.link) }}>
                                     <Typography textAlign="center">{setting.title}</Typography>
                                 </MenuItem>
                             ))}
@@ -147,7 +148,7 @@ function Navbar() {
                             open={Boolean(anchorElUser)}
                             onClose={e => { setAnchorElUser(null); }}
                         >
-                            <MenuItem onClick={e => { setAnchorElUser(null); navigate('/') }}>
+                            <MenuItem onClick={e => { setAnchorElUser(null);Cookies.remove('token'); navigate('/') }}>
                                 <Typography textAlign="center">{'Logout'}</Typography>
                             </MenuItem>
                         </Menu>

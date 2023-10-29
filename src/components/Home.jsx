@@ -16,7 +16,11 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import { useDispatch } from "react-redux"
 import CloseIcon from '@mui/icons-material/Close';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
+import { addToken } from '../redux/auth';
 // import Slide from '@mui/material/Slide';
 // import { TransitionProps } from '@mui/material/transitions';
 
@@ -28,14 +32,26 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 export default function Home() {
   var classes = useStyles();
+  const navigate = useNavigate()
   const token = useSelector(state => state.Token.Token);
   const [open1, setOpen1] = useState(false);
   const [price, setPrice] = useState(0);
   const [allOrder,setAllOrder]=useState([0]);
   // const [checked, setChecked] = useState(true);
   const [quantity, setQuan] = useState(0);
+  const [balance,setBalance]=useState(0);
   const [newPrice, setNewPrice] = useState(0);
   const [play, setPlay] = useState(false);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (token) {
+        dispatch(addToken({ token: token }));
+        navigate('/main')
+    }
+}, [])
+
 
   const buyall = async () => {
     const response = await fetch("https://backend-chi-eosin.vercel.app/api/buy", {  //// update
@@ -91,6 +107,28 @@ export default function Home() {
     });
     console.log(response)
   }
+  
+  const handleBought = async (e) => {
+    setBalance(balance + allOrder[e.target.value].Quantity)
+    const filteredOrder=allOrder.filter((i)=>{
+      return(allOrder[e.target.value]._id!==i._id);
+    })
+    setAllOrder(filteredOrder);
+    handleClose();
+    // const response = await fetch("https://backend-chi-eosin.vercel.app/api/bought", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({
+    //     "user": token,
+    //     "order": e.target.value,
+    //   }),
+    // });
+    // console.log(e.target.value);
+    // const data=await response.json();
+    // console.log(data)
+  }
   const handleClose1 = () => {
     setOpen1(false);
     // setChecked(true)
@@ -120,9 +158,9 @@ export default function Home() {
     return price;
   }
 
-  function buyoptions(cost,quan) {
+  function buyoptions(cost,quan,_id) {
     return (
-      <Box width={"80%"} sx={{ backgroundColor: "#2b2b2b",padding:"15px", marginY: "15px", borderRadius: "5px", }}>
+      <Box width={"80%"} key={_id} sx={{ backgroundColor: "#2b2b2b",padding:"15px", marginY: "15px", borderRadius: "5px", }}>
         <Box height={"60%"} sx={{ display: "flex", justifyContent: 'space-around', alignItems: 'center' }}>
           <Box>
             <Box variant="contained" sx={{ paddingX: "50px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder", color: "white" }} color="success">Quantity</Box>
@@ -134,7 +172,7 @@ export default function Home() {
           </Box>
         </Box>
         <Box height={"40%"} sx={{ display: "flex", justifyContent: 'space-around', alignItems: 'center' }}>
-          <Button variant="contained" sx={{ paddingX: "40px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder" }} color="success">BUY</Button>
+          <Button value={_id} onClick={handleBought} variant="contained" sx={{ paddingX: "40px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder" }} color="success">BUY</Button>
           {/* <Button variant="contained" sx={{ paddingX: "40px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder" }} color="error" >SELL</Button> */}
         </Box>
       </Box>
@@ -166,9 +204,9 @@ export default function Home() {
         </AppBar>
         <Box width={"100%"} height={"100%"} sx={{overflow:"scroll", backgroundColor: "#141313", display: "flex", alignItems: 'center',flexDirection:"column" }}>
           {
-            allOrder.map((i)=> {
+            allOrder.map((i,e)=> {
               if(i.userId!==token){
-                return(buyoptions(i.Price,i.Quantity));
+                return(buyoptions(i.Price,i.Quantity,e));
               }
             })
           }
@@ -249,7 +287,7 @@ export default function Home() {
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-around", marginTop: "10px" }}>
           <h4 style={{ color: "white" }}>Credits</h4>
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px", justifyContent: "space-around" }}>
-            <h4 style={{ color: "green" }}> +200 </h4>
+            <h4 style={{ color: balance>=0?"green":"red" }}> {balance} </h4>
             <h4 style={{ color: "white" }}>Units</h4>
           </Box>
         </Box>
