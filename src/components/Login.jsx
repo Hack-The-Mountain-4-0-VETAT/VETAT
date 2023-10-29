@@ -43,8 +43,7 @@ export default function Login() {
     }
     return (
         <>
-            <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
-                {/* <h1>{token}</h1> */}
+            {/* <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
                 <form style={{ width: "70%" }}>
                     <h1>Login</h1>
                     <div className="mb-3">
@@ -62,7 +61,44 @@ export default function Login() {
                     <p style={{ marginLeft: 20 }} onClick={() => { navigate("/Login") }}>Don't have an account? Create one</p>
 
                 </form>
-            </div>
+            </div> */}
+            <body>
+                <div class="container8">
+                    <div class="screen9">
+                        <div class="screen__content">
+                            <form class="login">
+                                <div class="login__field">
+                                    <i class="login__icon fas fa-user"></i>
+                                    <input type="text" class="login__input" value={email} onChange={(e) => { setEmail(e.target.value) }} placeholder="User Email"/>
+                                </div>
+                                <div class="login__field">
+                                    <i class="login__icon fas fa-lock"></i>
+                                    <input type="password" class="login__input" value={pass} onChange={(e) => { setPass(e.target.value) }} placeholder="Password"/>
+
+                                </div>
+                                <button class="button login__submit">
+                                    <span onClick={clicked} class="button__text">Login</span>
+                                    <i class="button__icon fas fa-chevron-right"></i>
+                                </button>
+                            </form>
+                            <div class="social-login">
+                                <h4>Don't have an account?</h4>
+                                <b><p  style={{color:"blue"}} onClick={() => { navigate("/login") }}>Sign up</p></b>
+
+
+                            </div>
+
+                        </div>
+                        <div class="screen__background">
+                            <span class="screen__background__shape screen__background__shape4"></span>
+                            <span class="screen__background__shape screen__background__shape3"></span>
+                            <span class="screen__background__shape screen__background__shape2"></span>
+                            <span class="screen__background__shape screen__background__shape1"></span>
+                        </div>
+                    </div>
+                </div>
+
+            </body>
         </>
     )
 }

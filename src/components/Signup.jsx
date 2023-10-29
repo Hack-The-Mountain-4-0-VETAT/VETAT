@@ -4,6 +4,7 @@ import { signup } from '../firebase/auth';
 import { addToken } from '../redux/auth';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import "./signup.css";
 
 export default function Signup() {
 
@@ -20,7 +21,7 @@ export default function Signup() {
         }
     }, [])
 
-    
+
 
     // const account = async (token) => {
     //     const response = await fetch("http://localhost:4000/api/login", {
@@ -59,8 +60,7 @@ export default function Signup() {
     }
     return (
         <>
-            <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
-                {/* <h1>{token}</h1> */}
+            {/* <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
                 <form style={{ width: "70%" }}>
                     <h1>Signup</h1>
                     <div className="mb-3">
@@ -75,7 +75,45 @@ export default function Signup() {
                     <button type="submit" onClick={clicked} className="btn btn-primary">Submit</button>
                     <a onClick={() => { navigate("/") }}>already have an account? Login</a>
                 </form>
-            </div>
+            </div> */}
+
+            <body>
+                <div class="container8">
+                    <div class="screen9">
+                        <div class="screen__content">
+                            <form class="login">
+                                <div class="login__field">
+                                    <i class="login__icon fas fa-user"></i>
+                                    <input type="text" class="login__input" value={email} onChange={(e) => { setEmail(e.target.value) }} placeholder="User Email"/>
+                                </div>
+                                <div class="login__field">
+                                    <i class="login__icon fas fa-lock"></i>
+                                    <input type="password" class="login__input" value={pass} onChange={(e) => { setPass(e.target.value) }} placeholder="Password"/>
+
+                                </div>
+                                <button class="button login__submit">
+                                    <span onClick={clicked} class="button__text">Sign up Now</span>
+                                    <i class="button__icon fas fa-chevron-right"></i>
+                                </button>
+                            </form>
+                            <div class="social-login">
+                                <h4>Already have an account?</h4>
+                                <b><p onClick={() => { navigate("/") }}>Log In</p></b>
+
+
+                            </div>
+
+                        </div>
+                        <div class="screen__background">
+                            <span class="screen__background__shape screen__background__shape4"></span>
+                            <span class="screen__background__shape screen__background__shape3"></span>
+                            <span class="screen__background__shape screen__background__shape2"></span>
+                            <span class="screen__background__shape screen__background__shape1"></span>
+                        </div>
+                    </div>
+                </div>
+
+            </body>
         </>
     )
 }
