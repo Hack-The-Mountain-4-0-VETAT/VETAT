@@ -20,7 +20,7 @@ import { useDispatch } from "react-redux"
 import CloseIcon from '@mui/icons-material/Close';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
-import { addToken } from '../redux/auth';
+import { addToken, addBalance} from '../redux/auth';
 // import Slide from '@mui/material/Slide';
 // import { TransitionProps } from '@mui/material/transitions';
 
@@ -34,17 +34,19 @@ export default function Home() {
   var classes = useStyles();
   const navigate = useNavigate()
   const token = useSelector(state => state.Token.Token);
+  const bal=useSelector(state => state.Token.Balance);
   const [open1, setOpen1] = useState(false);
   const [price, setPrice] = useState(0);
   const [allOrder,setAllOrder]=useState([0]);
   // const [checked, setChecked] = useState(true);
   const [quantity, setQuan] = useState(0);
-  const [balance,setBalance]=useState(0);
+  const [balance,setBalance]=useState(bal);
   const [newPrice, setNewPrice] = useState(0);
   const [play, setPlay] = useState(false);
   const dispatch = useDispatch();
 
   useEffect(() => {
+    setBalance(bal);
     const token = Cookies.get('token');
     if (token) {
         dispatch(addToken({ token: token }));
@@ -110,6 +112,7 @@ export default function Home() {
   
   const handleBought = async (e) => {
     setBalance(balance + allOrder[e.target.value].Quantity)
+    dispatch(addBalance({balance:balance}));
     const filteredOrder=allOrder.filter((i)=>{
       return(allOrder[e.target.value]._id!==i._id);
     })
