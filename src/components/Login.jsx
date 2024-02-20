@@ -1,104 +1,151 @@
-import React, { useEffect, useState } from 'react'
-import { useSelector, useDispatch } from "react-redux"
-import { login, reset } from '../firebase/auth';
+import * as React from 'react';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import CssBaseline from '@mui/material/CssBaseline';
+import TextField from '@mui/material/TextField';
+import Link from '@mui/material/Link';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { useDispatch } from "react-redux"
 import { addToken } from '../redux/auth';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import { db, auth } from '../firebase/Firebaseconfig';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { collection, getDocs } from 'firebase/firestore';
+
+
+
+const defaultTheme = createTheme();
+
 
 export default function Login() {
 
     const navigate = useNavigate()
-    const [email, setEmail] = useState("");
-    const [pass, setPass] = useState("");
+    const [email, setEmail] = React.useState("");
+    const [pass, setPass] = React.useState("");
     const dispatch = useDispatch();
+    const provider = new GoogleAuthProvider();
 
-    useEffect(() => {
+    React.useEffect(() => {
         const token = Cookies.get('token');
         if (token) {
             dispatch(addToken({ token: token }));
             navigate('/main')
         }
     }, [])
-    // const reset = async (e) => {
-    //     // e.preventDefault();
-    //     try {
-    //         await ;
-    //         // alert("reset password mail send")
-    //     } catch (error) {
-    //         console.log(error);
-    //         // alert("reset password failed")
-    //     }
-    // }
-    const clicked = async (e) => {
-        e.preventDefault();
-        try {
-            const data = await login({ email: email, password: pass, returnSecureToken: true });
-            dispatch(addToken({ token: data.data.idToken }))
-            console.log(data.data);   //////////
-            Cookies.set('token', data.data.idToken, { expires: 30 });
-            navigate('/main')
-        } catch (error) {
+
+    const signin = () => {
+        signInWithPopup(auth, provider).then((result) => {
+            getDocs(collection(db, "User")).then((dataRef) => {
+                const Members = dataRef.docs.map((doc) => ({
+                    ...doc.data(),
+                    id: doc.id
+                }))
+                var flag = false;
+                let i = 0;
+                for (i; i < Members.length; i++) {
+                    if (Members[i].Email === result.user.email) {
+                        flag = true;
+                        break;
+                    }
+                } if (flag === true) {
+                    Cookies.set('token', Members[i].id, { expires: 7 });
+                    navigate(`/main`);
+                } else {
+                    alert("Account Does Not Exist")
+                }
+            })
+        }).catch(error => {
             console.log(error);
-        }
+        });
     }
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        console.log({
+            email: data.get('email'),
+            password: data.get('password'),
+        });
+    };
+
     return (
-        <>
-            <div style={{ display: "flex", height: "80vh", alignItems: "center", justifyContent: "center" }}>
-                <form style={{ width: "70%" }}>
-                    <h1>Login</h1>
-                    <div className="mb-3">
-                        <label htmlFor="exampleInputEmail1" className="form-label">Email address</label>
-                        <input type="email" value={email} onChange={(e) => { setEmail(e.target.value) }} className="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" />
-                        <div id="emailHelp" className="form-text">We'll never share your email with anyone else.</div>
-                    </div>
-                    <p>fill in the Email for password reset</p>
-                    <div className="mb-3">
-                        <label htmlFor="exampleInputPassword1" className="form-label">Password</label>
-                        <input value={pass} onChange={(e) => { setPass(e.target.value) }} type="password" className="form-control" id="exampleInputPassword1" />
-                    </div>
-                    <button style={{ marginLeft: 20 }} onClick={(e) => { e.preventDefault(); reset({ requestType: "PASSWORD_RESET", email: email }) }}>reset password</button>
-                    <button type="submit" onClick={clicked} className="btn btn-primary">Submit</button>
-                    <p style={{ marginLeft: 20 }} onClick={() => { navigate("/Login") }}>Don't have an account? Create one</p>
+        <ThemeProvider theme={defaultTheme}>
+            <Container component="main" maxWidth="xs">
+                <CssBaseline />
+                <Box
+                    sx={{
+                        marginTop: 8,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+                        <LockOutlinedIcon />
+                    </Avatar>
+                    <Typography component="h1" variant="h5">
+                        Sign in
+                    </Typography>
+                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="email"
+                            label="Email Address"
+                            name="email"
+                            autoComplete="email"
+                            autoFocus
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            name="password"
+                            label="Password"
+                            type="password"
+                            id="password"
+                            autoComplete="current-password"
+                        />
+                        <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 2 }}
+                        >
+                            Sign In
+                        </Button>
+                        <Grid container>
+                            <Grid item xs>
+                                <Link href="#" variant="body2">
+                                    Forgot password?
+                                </Link>
+                            </Grid>
+                            <Grid item>
+                                <Box onClick={()=>navigate('/login')} variant="body2">
+                                    {"Don't have an account? Sign Up"}
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </Box>
+                <Box WidthFull sx={{display:"flex", alignItems:"center", justifyContent:"center"}}>
+                    <Button
+                        onClick={signin}
+                        variant="contained"
+                        sx={{ mt: 3, mb: 2, position: "absolute", bottom: 20 }}
+                    >
+                        Sign In with Google
+                    </Button>
+                </Box>
 
-                </form>
-            </div>
-            {/* <body>
-                <div class="container8">
-                    <div class="screen9">
-                        <div class="screen__content">
-                            <form class="login">
-                                <div class="login__field">
-                                    <i class="login__icon fas fa-user"></i>
-                                    <input type="text" class="login__input" value={email} onChange={(e) => { setEmail(e.target.value) }} placeholder="User Email"/>
-                                </div>
-                                <div class="login__field">
-                                    <i class="login__icon fas fa-lock"></i>
-                                    <input type="password" class="login__input" value={pass} onChange={(e) => { setPass(e.target.value) }} placeholder="Password"/>
+            </Container>
 
-                                </div>
-                                <button class="button login__submit">
-                                    <span onClick={clicked} class="button__text">Login</span>
-                                    <i class="button__icon fas fa-chevron-right"></i>
-                                </button>
-                            </form>
-                            <div class="social-login">
-                                <h4>Don't have an account?</h4>
-                                <button type="submit" onClick={clicked} className="btn btn-primary">Submit</button>
-
-
-                            </div>
-
-                        </div>
-                        <div class="screen__background">
-                            <span class="screen__background__shape screen__background__shape4"></span>
-                            <span class="screen__background__shape screen__background__shape3"></span>
-                            <span class="screen__background__shape screen__background__shape2"></span>
-                            <span class="screen__background__shape screen__background__shape1"></span>
-                        </div>
-                    </div>
-                </div>
-
-            </body> */}
-        </>
-    )
+        </ThemeProvider>
+    );
 }
