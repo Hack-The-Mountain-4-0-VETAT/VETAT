@@ -1,28 +1,18 @@
 import React, { useState } from 'react'
-import { useSelector } from "react-redux";
 import { useStyles } from './HomeCss';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Grid, Box, Slide } from "@mui/material";
-// import Switch, { switchClasses } from '@mui/material/Switch';
-// import Stack from '@mui/material/Stack';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { useEffect } from 'react';
-// import { PriceChangeOutlined } from '@mui/icons-material';
-// import ListItemText from '@mui/material/ListItemText';
-// import ListItem from '@mui/material/ListItem';
-// import List from '@mui/material/List';
-// import Divider from '@mui/material/Divider';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { useDispatch } from "react-redux"
 import CloseIcon from '@mui/icons-material/Close';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
-import { addToken, addBalance} from '../redux/auth';
-// import Slide from '@mui/material/Slide';
-// import { TransitionProps } from '@mui/material/transitions';
+import { db } from '../firebase/Firebaseconfig';
+import {getDoc,doc,collection,updateDoc, getDocs, deleteDoc, addDoc, onSnapshot} from "firebase/firestore";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -33,38 +23,55 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 export default function Home() {
   var classes = useStyles();
   const navigate = useNavigate()
-  const token = useSelector(state => state.Token.Token);
-  const bal=useSelector(state => state.Token.Balance);
   const [open1, setOpen1] = useState(false);
   const [price, setPrice] = useState(0);
   const [allOrder,setAllOrder]=useState([0]);
-  // const [checked, setChecked] = useState(true);
   const [quantity, setQuan] = useState(0);
-  const [balance,setBalance]=useState(bal);
+  const [balance,setBalance]=useState(0);
   const [newPrice, setNewPrice] = useState(0);
   const [play, setPlay] = useState(false);
-  const dispatch = useDispatch();
+  const [token,settoken]=useState("");
+  const [name,setname]=useState("");
+
+
+  const getdata=async(tok)=>{
+    try {
+      const dataRef = doc(collection(db, 'User'), tok);
+        onSnapshot(dataRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = {
+              ...docSnapshot.data(),
+              id: docSnapshot.id,
+            };
+    
+            setBalance(parseInt(userData.Credit, 10));
+            setname(userData.Name);
+          }
+        }) 
+    } catch (error) {
+      console.error('Error getting document:', error);
+    }  
+  }
 
   useEffect(() => {
-    setBalance(bal);
-    const token = Cookies.get('token');
-    if (token) {
-        dispatch(addToken({ token: token }));
-        navigate('/main')
+    const newtoken = Cookies.get('token');
+    if (newtoken) {
+      settoken(newtoken);
+      getdata(newtoken);
+    }else{
+      navigate('/');
     }
-}, [])
+}, [balance])
 
 
   const buyall = async () => {
-    const response = await fetch("https://backend-chi-eosin.vercel.app/api/buy", {  //// update
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const data=await response.json();
-    console.log(data.data);
-    setAllOrder(data.data);
+    const dataref=await getDocs(collection(db,"Orders"))
+    const data=dataref.docs.map((doc)=>({
+      ...doc.data(),
+      id:doc.id
+    }))
+    console.log(data);
+    setAllOrder(data);
   }
 
   const handleClickOpen1 = () => {
@@ -95,39 +102,34 @@ export default function Home() {
 
  
   const order = async () => {
-    const response = await fetch("https://backend-chi-eosin.vercel.app/api/order", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        "user": token,
-        "type": "Sell",
-        "quantity": quantity,
-        "price": newPrice === 0 ? price : newPrice,
-      }),
-    });
-    console.log(response)
+    const order={
+      "user": token,
+      "type": "Sell",
+      "Quantity": quantity,
+      "Price": newPrice === 0 ? price : newPrice,
+    }
+    await addDoc(collection(db,"Orders"),order);
+    console.log("order placed")
+    setPrice(0);
+    setQuan(0);
   }
   
   const handleBought = async (e) => {
-    // console.log(allOrder[e.target.value]._id);
-    setBalance(balance + allOrder[e.target.value].Quantity)
-    dispatch(addBalance({balance:balance}));
-    // const filteredOrder=allOrder.filter((i)=>{
-    //   return(allOrder[e.target.value]._id!==i._id);
-    // })
-    // setAllOrder(filteredOrder);
-    
-    await fetch("https://backend-chi-eosin.vercel.app/api/remove", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        "user": allOrder[e.target.value]._id,
-      }),
-    });
+    console.log(allOrder[e.target.value].id);
+    const newQuantity=parseInt(allOrder[e.target.value].Quantity, 10);
+    setBalance(balance + newQuantity)
+
+    const filteredOrder=allOrder.filter((i)=>{
+      return(allOrder[e.target.value].id!==i.id);
+    })
+    setAllOrder(filteredOrder);
+    await updateDoc(doc(collection(db,"User"),token),{"Credit":balance + newQuantity})
+    console.log("old user",allOrder[e.target.value].user);
+    const oldbalref=await getDoc(doc(collection(db,"User"),allOrder[e.target.value].user));
+    const bal={...oldbalref.data()}
+    console.log(bal.Credit);
+    await updateDoc(doc(collection(db,"User"),allOrder[e.target.value].user),{"Credit":bal.Credit-newQuantity})
+    await deleteDoc(doc(collection(db,"Orders"),allOrder[e.target.value].id))
     handleClose();
   }
   const handleClose1 = () => {
@@ -206,7 +208,7 @@ export default function Home() {
         <Box width={"100%"} height={"100%"} sx={{overflow:"scroll", backgroundColor: "#141313", display: "flex", alignItems: 'center',flexDirection:"column" }}>
           {
             allOrder.map((i,e)=> {
-              if(i.userId!==token){
+              if(i.user!==token){
                 return(buyoptions(i.Price,i.Quantity,e));
               }
             })
@@ -231,19 +233,6 @@ export default function Home() {
         </DialogTitle>
         <DialogContent>
           <Grid container xs={12}>
-            {/* <Grid item xs={12}>
-              <Switch
-                checked={checked}
-                onChange={handleCheck}
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": { color: 'white' },
-                  "& .MuiSwitch-switchBase": { color: 'white' },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: 'green' },
-                  '& .MuiSwitch-switchBase + .MuiSwitch-track': { backgroundColor: 'red' }
-                }}
-              />
-              {value}
-            </Grid> */}
             <Grid item xs={6}>
               <TextField value={quantity} onChange={(e) => { setQuan(e.target.value); }} sx={{ color: "white" }} id="filled-password-input" label="Quantity" variant="standard" />
             </Grid>
@@ -263,7 +252,7 @@ export default function Home() {
 
   return (
     <Box className={classes.mainContainer}>
-      <Box className={classes.heading} >Hi, User</Box>
+      <Box className={classes.heading} >Hi, {name.split(" ")[0]}</Box>
       <Box className={classes.box}>
         <Box sx={{ display: 'flex', justifyContent: "space-around", width: "100%" }}>
           <Box sx={{ backgroundColor: "#2B2B2B", paddingX: "40px", paddingY: "10px", borderRadius: "20px" }}>

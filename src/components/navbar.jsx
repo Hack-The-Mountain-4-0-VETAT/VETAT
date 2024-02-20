@@ -15,6 +15,8 @@ import AdbIcon from '@mui/icons-material/Adb';
 import Cookies from 'js-cookie';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import { useNavigate } from 'react-router';
+import { collection, doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/Firebaseconfig';
 
 const pages = [
     {
@@ -41,6 +43,33 @@ function Navbar() {
     const navigate = useNavigate();
     const [anchorElNav, setAnchorElNav] = React.useState(null);
     const [anchorElUser, setAnchorElUser] = React.useState(null);
+    const [photo,setPhoto]=React.useState("");
+
+    const getdata=async(tok)=>{
+        try {
+          const dataRef = await getDoc(doc(collection(db, 'User'), tok));
+      
+          if (dataRef.exists()) {
+            const userData = {
+              ...dataRef.data(),
+              id: dataRef.id,
+            };
+            setPhoto(userData.Photo)
+          } else {
+            console.log('No such document!');
+          }
+        } catch (error) {
+          console.error('Error getting document:', error);
+        }  
+    }
+    React.useEffect(() => {
+        const newtoken = Cookies.get('token');
+        if (newtoken) {
+          getdata(newtoken);
+        }else{
+            setPhoto("");
+        }
+    }, [Cookies.get('token')])
 
     const handleOpenUserMenu = (event) => {
         setAnchorElUser(event.currentTarget);
@@ -105,7 +134,9 @@ function Navbar() {
 
                         <Tooltip title="Open settings">
                             <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
+                                {
+                                photo!=="" &&<Avatar alt="Remy Sharp" src={photo} />
+                                }
                             </IconButton>
                         </Tooltip>
                         <Menu
