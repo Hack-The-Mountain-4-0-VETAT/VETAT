@@ -1,6 +1,10 @@
 import { Typography, Paper, Grid, Avatar, Divider, Card, CardContent, List, ListItem, ListItemText, Box, Container } from '@mui/material'
 import { styled } from '@mui/styles';
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
+import { db } from '../firebase/Firebaseconfig';
+import { doc, onSnapshot } from "firebase/firestore";
 
 const imageURL = "bg.png";
 const Background = styled(Box)({
@@ -36,6 +40,39 @@ const TransactionItem = styled(ListItem)({
 });
 
 export default function Profile() {
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [token, setToken] = useState("");
+  const [photo, setPhoto] = useState("");
+
+  useEffect(() => {
+    const newtoken = Cookies.get('token');
+    if (newtoken) {
+      setToken(newtoken);
+      getdata(newtoken);
+    } else {
+      navigate('/');
+    }
+  }, []);
+
+  const getdata = async (tok) => {
+    try {
+      const dataRef = doc(db, 'User', tok);
+      onSnapshot(dataRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const userData = {
+            ...docSnapshot.data(),
+            id: docSnapshot.id,
+          };
+          setName(userData.Name);
+          setPhoto(userData.Photo);
+        }
+      })
+    } catch (error) {
+      console.error('Error getting document:', error);
+    }
+  }
+
   return (
     <Box bgcolor={'#1a1a1a'} minHeight={'100vh'}>
       <Background>
@@ -48,7 +85,7 @@ export default function Profile() {
             gap: 3
           }}>
             <Avatar
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLe5PABjXc17cjIMOibECLM7ppDwMmiDg6Dw&usqp=CAU"
+              src={photo}
               sx={{ 
                 width: { xs: 120, sm: 150 }, 
                 height: { xs: 120, sm: 150 },
@@ -70,7 +107,7 @@ export default function Profile() {
                         color: '#00b894'
                       }}
                     >
-                      Hi, Adam
+                      Hi, {name.split(" ")[0]}
                     </Typography>
                     <Divider sx={{ my: 2, bgcolor: '#4a4a4a' }} />
                     <List>

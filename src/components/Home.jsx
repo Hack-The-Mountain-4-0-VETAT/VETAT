@@ -533,8 +533,8 @@ export default function Home() {
   }));
 
   return (
-    <Box className={classes.mainContainer} sx={{ paddingTop: "80px" }}>
-      <Box className={classes.heading} >Hi, {name.split(" ")[0]}</Box>
+    <Box className={classes.mainContainer} sx={{ paddingTop: "50px" }}>
+      <Box className={classes.heading} sx={{ marginBottom: "30px" }}>Hi, {name.split(" ")[0]}</Box>
       <Box className={classes.box}>
         <Box sx={{ display: 'flex', justifyContent: "space-around", width: "100%" }}>
           <Box sx={{ 
