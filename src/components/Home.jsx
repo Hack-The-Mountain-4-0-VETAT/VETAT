@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useStyles } from './HomeCss';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Grid, Box, Slide } from "@mui/material";
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import { useEffect } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
@@ -12,13 +11,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase/Firebaseconfig';
-import {getDoc,doc,collection,updateDoc, getDocs, deleteDoc, addDoc, onSnapshot} from "firebase/firestore";
+import { getDoc, doc, collection, updateDoc, getDocs, deleteDoc, addDoc, onSnapshot } from "firebase/firestore";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
-
-
 
 export default function Home() {
   var classes = useStyles();
@@ -29,10 +27,16 @@ export default function Home() {
   const [quantity, setQuan] = useState(0);
   const [balance,setBalance]=useState(0);
   const [newPrice, setNewPrice] = useState(0);
-  const [play, setPlay] = useState(false);
+  const [play, setPlay] = useState(true);
   const [token,settoken]=useState("");
   const [name,setname]=useState("");
-
+  const [priceHistory, setPriceHistory] = useState([7]);
+  const [timeData, setTimeData] = useState([new Date().toLocaleTimeString()]);
+  const priceRef = useRef(7);
+  const [advances, setAdvances] = useState(0);
+  const [declines, setDeclines] = useState(0);
+  const [unchanged, setUnchanged] = useState(0);
+  const previousPriceRef = useRef(7);
 
   const getdata=async(tok)=>{
     try {
@@ -63,7 +67,6 @@ export default function Home() {
     }
 }, [balance])
 
-
   const buyall = async () => {
     const dataref=await getDocs(collection(db,"Orders"))
     const data=dataref.docs.map((doc)=>({
@@ -89,47 +92,91 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setTimeout(() => {
-      let k = simulateStockPrice();
-      if (k !== price) {
-        setPrice(k);
-      }
-      else {
-        setPrice(k = k + 0.2);
-      }
-    }, 1000);
-  }, [price])
+    if (play) {
+      const interval = setInterval(() => {
+        let k = simulateStockPrice();
+        if (k !== priceRef.current) {
+          // Update price change statistics
+          if (k > previousPriceRef.current) {
+            setAdvances(prev => prev + 1);
+          } else if (k < previousPriceRef.current) {
+            setDeclines(prev => prev + 1);
+          } else {
+            setUnchanged(prev => prev + 1);
+          }
+          previousPriceRef.current = k;
+          
+          priceRef.current = k;
+          setPrice(k);
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString();
+          setTimeData(prev => [...prev, timeStr].slice(-50));
+          setPriceHistory(prev => [...prev, k].slice(-50));
+        }
+        else {
+          const newPrice = Number((k + 0.2).toFixed(2));
+          // Update price change statistics
+          if (newPrice > previousPriceRef.current) {
+            setAdvances(prev => prev + 1);
+          } else if (newPrice < previousPriceRef.current) {
+            setDeclines(prev => prev + 1);
+          } else {
+            setUnchanged(prev => prev + 1);
+          }
+          previousPriceRef.current = newPrice;
+          
+          priceRef.current = newPrice;
+          setPrice(newPrice);
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString();
+          setTimeData(prev => [...prev, timeStr].slice(-50));
+          setPriceHistory(prev => [...prev, newPrice].slice(-50));
+        }
+      }, 1000);
 
- 
+      return () => clearInterval(interval);
+    }
+  }, [play]);
+
   const order = async () => {
-    const order={
+    if (quantity === 0) {
+      alert("Please set Quantity");
+      return;
+    }
+
+    const orderPrice = newPrice === 0 || newPrice === "" ? Number(price.toFixed(2)) : Number(newPrice);
+    
+    const order = {
       "user": token,
       "type": "Sell",
-      "Quantity": quantity,
-      "Price": newPrice === 0 ? price : newPrice,
+      "Quantity": Number(quantity),
+      "Price": orderPrice,
     }
-    await addDoc(collection(db,"Orders"),order);
-    console.log("order placed")
+    
+    await addDoc(collection(db,"Orders"), order);
+    console.log("order placed");
     setPrice(0);
     setQuan(0);
+    setNewPrice(0);
+    handleClose1();
   }
   
   const handleBought = async (e) => {
     console.log(allOrder[e.target.value].id);
-    const newQuantity=parseInt(allOrder[e.target.value].Quantity, 10);
-    setBalance(balance + newQuantity)
+    const newQuantity = Number(allOrder[e.target.value].Quantity);
+    setBalance(balance + newQuantity);
 
-    const filteredOrder=allOrder.filter((i)=>{
-      return(allOrder[e.target.value].id!==i.id);
-    })
+    const filteredOrder = allOrder.filter((i) => {
+      return(allOrder[e.target.value].id !== i.id);
+    });
     setAllOrder(filteredOrder);
-    await updateDoc(doc(collection(db,"User"),token),{"Credit":balance + newQuantity})
-    console.log("old user",allOrder[e.target.value].user);
-    const oldbalref=await getDoc(doc(collection(db,"User"),allOrder[e.target.value].user));
-    const bal={...oldbalref.data()}
+    await updateDoc(doc(collection(db,"User"), token), {"Credit": balance + newQuantity});
+    console.log("old user", allOrder[e.target.value].user);
+    const oldbalref = await getDoc(doc(collection(db,"User"), allOrder[e.target.value].user));
+    const bal = {...oldbalref.data()};
     console.log(bal.Credit);
-    await updateDoc(doc(collection(db,"User"),allOrder[e.target.value].user),{"Credit":bal.Credit-newQuantity})
-    await deleteDoc(doc(collection(db,"Orders"),allOrder[e.target.value].id))
+    await updateDoc(doc(collection(db,"User"), allOrder[e.target.value].user), {"Credit": bal.Credit - newQuantity});
+    await deleteDoc(doc(collection(db,"Orders"), allOrder[e.target.value].id));
     handleClose();
   }
   const handleClose1 = () => {
@@ -149,34 +196,123 @@ export default function Home() {
   };
 
   function simulateStockPrice() {
-    let price = 7;
-    const minChange = -0.1;
-    const maxChange = 0.1;
+    let price = priceRef.current || 7;
+    const minChange = -0.05;
+    const maxChange = 0.05;
     const priceChange = (Math.random() * (maxChange - minChange) + minChange).toFixed(2);
     price += parseFloat(priceChange);
     if (price < 1) {
       price = 1;
     }
-
-    return price;
+    return Number(price.toFixed(2));
   }
 
   function buyoptions(cost,quan,_id) {
     return (
-      <Box width={"80%"} key={_id} sx={{ backgroundColor: "#2b2b2b",padding:"15px", marginY: "15px", borderRadius: "5px", }}>
-        <Box height={"60%"} sx={{ display: "flex", justifyContent: 'space-around', alignItems: 'center' }}>
-          <Box>
-            <Box variant="contained" sx={{ paddingX: "50px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder", color: "white" }} color="success">Quantity</Box>
-            <p style={{ textAlign: 'center', color: "white" }}>{quan}</p>
+      <Box 
+        width={"90%"} 
+        key={_id} 
+        sx={{ 
+          backgroundColor: "#2b2b2b",
+          padding: "20px",
+          marginY: "15px",
+          borderRadius: "15px",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          transition: "transform 0.2s, box-shadow 0.2s",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 6px 12px rgba(0, 0, 0, 0.2)",
+          }
+        }}
+      >
+        <Box 
+          sx={{ 
+            display: "flex", 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: "15px"
+          }}
+        >
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                color: "#00b894",
+                fontWeight: "600",
+                marginBottom: "5px"
+              }}
+            >
+              Quantity
+            </Typography>
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                color: "white",
+                fontWeight: "700"
+              }}
+            >
+              {quan}
+            </Typography>
           </Box>
-          <Box>
-            <Box variant="contained" sx={{ paddingX: "50px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder", color: "white" }} color="error" >Price</Box>
-            <p style={{ textAlign: 'center', color: "white" }}>{cost}</p>
+          <Box 
+            sx={{ 
+              width: "1px", 
+              height: "50px", 
+              backgroundColor: "#404040",
+              margin: "0 20px"
+            }}
+          />
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                color: "#ff7675",
+                fontWeight: "600",
+                marginBottom: "5px"
+              }}
+            >
+              Price
+            </Typography>
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                color: "white",
+                fontWeight: "700"
+              }}
+            >
+              ₹{cost}
+            </Typography>
           </Box>
         </Box>
-        <Box height={"40%"} sx={{ display: "flex", justifyContent: 'space-around', alignItems: 'center' }}>
-          <Button value={_id} onClick={handleBought} variant="contained" sx={{ paddingX: "40px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder" }} color="success">BUY</Button>
-          {/* <Button variant="contained" sx={{ paddingX: "40px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder" }} color="error" >SELL</Button> */}
+        <Box 
+          sx={{ 
+            display: "flex", 
+            justifyContent: 'center',
+            marginTop: "10px"
+          }}
+        >
+          <Button 
+            value={_id} 
+            onClick={handleBought} 
+            variant="contained" 
+            sx={{ 
+              paddingX: "40px",
+              paddingY: "10px",
+              fontSize: "18px",
+              borderRadius: "10px",
+              fontWeight: "600",
+              background: "linear-gradient(45deg, #00b894 30%, #00cec9 90%)",
+              boxShadow: "0 3px 5px 2px rgba(0, 184, 148, .3)",
+              transition: "all 0.3s",
+              "&:hover": {
+                background: "linear-gradient(45deg, #00cec9 30%, #00b894 90%)",
+                boxShadow: "0 5px 8px 3px rgba(0, 184, 148, .4)",
+                transform: "translateY(-1px)",
+              }
+            }}
+          >
+            BUY NOW
+          </Button>
         </Box>
       </Box>
     )
@@ -226,40 +362,203 @@ export default function Home() {
         onClose={handleClose1}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
+        PaperProps={{
+          sx: {
+            backgroundColor: '#2b2b2b',
+            borderRadius: '15px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            minWidth: '400px'
+          }
+        }}
       >
-        <DialogTitle id="alert-dialog-title"
+        <DialogTitle 
+          id="alert-dialog-title"
+          sx={{
+            backgroundColor: '#1a1a1a',
+            color: '#fff',
+            borderTopLeftRadius: '15px',
+            borderTopRightRadius: '15px',
+            padding: '20px',
+            borderBottom: '1px solid #404040'
+          }}
         >
-          <Box style={{ fontSize: "18px" }}>Current Electricity rate: {price}</Box>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            marginBottom: '15px'
+          }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Sell Electricity
+            </Typography>
+            <IconButton
+              onClick={handleClose1}
+              sx={{ 
+                color: '#fff',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Box sx={{ 
+            backgroundColor: '#2b2b2b', 
+            padding: '12px 20px', 
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '10px'
+          }}>
+            <Typography sx={{ color: '#b2bec3' }}>Current Rate:</Typography>
+            <Typography sx={{ 
+              color: '#00b894',
+              fontWeight: 600,
+              fontSize: '1.2rem'
+            }}>
+              ₹{price.toFixed(2)}
+            </Typography>
+          </Box>
         </DialogTitle>
-        <DialogContent>
-          <Grid container xs={12}>
-            <Grid item xs={6}>
-              <TextField value={quantity} onChange={(e) => { setQuan(e.target.value); }} sx={{ color: "white" }} id="filled-password-input" label="Quantity" variant="standard" />
+        <DialogContent sx={{ padding: '20px' }}>
+          <Box sx={{ mt: 2 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  value={quantity}
+                  onChange={(e) => { setQuan(e.target.value); }}
+                  label="Quantity"
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: '#fff',
+                      '& fieldset': {
+                        borderColor: '#404040',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#00b894',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#00b894',
+                      },
+                      '& input': {
+                        color: '#fff',
+                      }
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#b2bec3',
+                      '&.Mui-focused': {
+                        color: '#00b894',
+                      }
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  value={newPrice}
+                  onChange={(e) => { setNewPrice(e.target.value); }}
+                  label="Price (0 = Market Value)"
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: '#fff',
+                      '& fieldset': {
+                        borderColor: '#404040',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#00b894',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#00b894',
+                      },
+                      '& input': {
+                        color: '#fff',
+                      }
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#b2bec3',
+                      '&.Mui-focused': {
+                        color: '#00b894',
+                      }
+                    }
+                  }}
+                />
+              </Grid>
             </Grid>
-            <Grid item xs={6}>
-              <TextField value={newPrice} onChange={(e) => { setNewPrice(e.target.value); }} id="filled-password-input" label="Price (0 = Market Value)" variant="standard" />
-            </Grid>
-
-          </Grid>
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handlesubmit}>Submit</Button>
-          <Button onClick={handleClose1} autoFocus>Cancel</Button>
+        <DialogActions sx={{ 
+          padding: '15px 20px',
+          backgroundColor: '#1a1a1a',
+          borderTop: '1px solid #404040',
+          borderBottomLeftRadius: '15px',
+          borderBottomRightRadius: '15px'
+        }}>
+          <Button 
+            onClick={handleClose1}
+            sx={{
+              color: '#b2bec3',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handlesubmit}
+            variant="contained"
+            sx={{
+              backgroundColor: '#00b894',
+              '&:hover': {
+                backgroundColor: '#00a187'
+              }
+            }}
+          >
+            Sell Now
+          </Button>
         </DialogActions>
       </Dialog>
     )
   }
 
+  const chartData = timeData.map((time, index) => ({
+    time,
+    price: priceHistory[index]
+  }));
+
   return (
-    <Box className={classes.mainContainer}>
+    <Box className={classes.mainContainer} sx={{ paddingTop: "80px" }}>
       <Box className={classes.heading} >Hi, {name.split(" ")[0]}</Box>
       <Box className={classes.box}>
         <Box sx={{ display: 'flex', justifyContent: "space-around", width: "100%" }}>
-          <Box sx={{ backgroundColor: "#2B2B2B", paddingX: "40px", paddingY: "10px", borderRadius: "20px" }}>
+          <Box sx={{ 
+            backgroundColor: "#2B2B2B", 
+            paddingX: "40px", 
+            paddingY: "10px", 
+            borderRadius: "20px",
+            minWidth: "150px",
+            textAlign: "center"
+          }}>
             Current Price
           </Box>
-          <Box sx={{ backgroundColor: "#2B2B2B", paddingX: "40px", paddingY: "10px", borderRadius: "20px" }}>
-            {price}
+          <Box sx={{ 
+            backgroundColor: "#2B2B2B", 
+            paddingX: "40px", 
+            paddingY: "10px", 
+            borderRadius: "20px",
+            minWidth: "150px",
+            textAlign: "center",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+          }}>
+            {price.toFixed(2)}
           </Box>
         </Box>
       </Box>
@@ -282,24 +581,138 @@ export default function Home() {
           </Box>
         </Box>
       </Box>
-      <Box className={classes.box} style={{ justifyContent: "space-evenly" }}>
-        <Box style={{ fontSize: "25px", fontWeight: "600" }}>Current Status</Box>
-        {play && <Button variant="outlined" onClick={(e) => { play == false ? setPlay(true) : setPlay(false) }} startIcon={<PlayArrowIcon />} >Play</Button>}
-        {!play && <Button variant="outlined" onClick={(e) => { play == false ? setPlay(true) : setPlay(false) }} startIcon={<PauseIcon />} >Pause</Button>}
+      <Box className={classes.box} style={{ justifyContent: "space-evenly", marginBottom: "20px" }}>
+        <Box style={{ fontSize: "25px", fontWeight: "600" }}>Current Grid Status</Box>
+        <Button 
+          variant="outlined" 
+          onClick={() => setPlay(!play)}
+          startIcon={play ? <PauseIcon /> : <PlayArrowIcon />}
+        >
+          {play ? 'Pause' : 'Play'}
+        </Button>
       </Box>
-      <Box className={classes.box}>
-        {/* graph */}
-        <img width={"100%"} src="/assets/stock.jpg" alt="graph" />
+      <Box className={classes.box} sx={{ marginBottom: "20px" }}>
+        <Box sx={{ 
+          width: '100%', 
+          height: 400, 
+          backgroundColor: '#2b2b2b', 
+          borderRadius: '10px', 
+          p: 2,
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+        }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#666" />
+              <XAxis 
+                dataKey="time" 
+                stroke="#fff"
+                tick={{ fill: '#fff' }}
+                hide={true}
+              />
+              <YAxis 
+                stroke="#fff"
+                tick={{ fill: '#fff' }}
+                domain={['dataMin - 0.5', 'dataMax + 0.5']}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#2b2b2b', 
+                  border: 'none', 
+                  color: '#fff',
+                  borderRadius: '5px'
+                }}
+                labelStyle={{ color: '#fff' }}
+                formatter={(value, name) => [`${value.toFixed(2)}`, name]}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="price" 
+                stroke="#965BF6" 
+                strokeWidth={2}
+                dot={{ fill: '#965BF6', strokeWidth: 2 }}
+                isAnimationActive={true}
+                animationDuration={500}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
       </Box>
 
-      <Box className={classes.box} style={{ justifyContent: "space-between" }}>
-        <ul>
-          <li>Advances - 14</li>
-          <li>Declines - 36</li>
-          <li>Unchanged - 1</li>
+      <Box className={classes.box} style={{ justifyContent: "space-between", marginTop: "20px" }}>
+        <ul style={{ color: "white", listStyle: "none", padding: 0 }}>
+          <li>Advances - {advances}</li>
+          <li>Declines - {declines}</li>
+          <li>Unchanged - {unchanged}</li>
         </ul>
-        <Box>Current Electricity rate</Box>
-        <Box>Last Updated : 3:01 PM</Box>
+        <Box sx={{ color: "white" }}>Last Updated : {new Date().toLocaleTimeString()}</Box>
+      </Box>
+
+      {/* AI Suggestions Section */}
+      <Box className={classes.box} sx={{ 
+        marginTop: "30px",
+        backgroundColor: "#2b2b2b",
+        borderRadius: "15px",
+        padding: "20px",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+      }}>
+        <Typography variant="h5" sx={{ 
+          color: "#00b894",
+          fontWeight: "600",
+          marginBottom: "20px",
+          textAlign: "center"
+        }}>
+          AI Trading Suggestions
+        </Typography>
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ 
+              backgroundColor: "#1a1a1a",
+              padding: "15px",
+              borderRadius: "10px",
+              height: "100%"
+            }}>
+              <Typography variant="h6" sx={{ color: "#00b894", marginBottom: "10px" }}>
+                Short-term Prediction
+              </Typography>
+              <Typography sx={{ color: "#b2bec3" }}>
+                Price is expected to increase by 2.5% in the next hour based on current market trends and historical patterns.
+              </Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Box sx={{ 
+              backgroundColor: "#1a1a1a",
+              padding: "15px",
+              borderRadius: "10px",
+              height: "100%"
+            }}>
+              <Typography variant="h6" sx={{ color: "#00b894", marginBottom: "10px" }}>
+                Trading Strategy
+              </Typography>
+              <Typography sx={{ color: "#b2bec3" }}>
+                Consider selling at current price levels. Market indicators suggest a potential price correction in the next 30 minutes.
+              </Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Box sx={{ 
+              backgroundColor: "#1a1a1a",
+              padding: "15px",
+              borderRadius: "10px",
+              height: "100%"
+            }}>
+              <Typography variant="h6" sx={{ color: "#00b894", marginBottom: "10px" }}>
+                Risk Assessment
+              </Typography>
+              <Typography sx={{ color: "#b2bec3" }}>
+                Low risk trading environment. Volatility is within normal range. Consider setting stop-loss at 5% below current price.
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
       </Box>
     </Box>
   )
