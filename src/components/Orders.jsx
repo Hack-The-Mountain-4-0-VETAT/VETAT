@@ -4,8 +4,35 @@ import { useStyles } from './HomeCss';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase/Firebaseconfig';
 import { doc, collection, deleteDoc, onSnapshot } from "firebase/firestore";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Typography, IconButton } from "@mui/material";
+import DeleteIcon from '@mui/icons-material/Delete';
+import { styled } from '@mui/material/styles';
 
+const StyledOrderCard = styled(Box)(({ theme }) => ({
+  width: "90%",
+  backgroundColor: "#2b2b2b",
+  padding: "20px",
+  marginY: "25px",
+  borderRadius: "15px",
+  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+  transition: "transform 0.2s, box-shadow 0.2s",
+  "&:hover": {
+    transform: "translateY(-2px)",
+    boxShadow: "0 6px 12px rgba(0, 0, 0, 0.2)",
+  }
+}));
+
+const StatBox = styled(Box)(({ theme }) => ({
+  flex: 1,
+  textAlign: 'center',
+  padding: '10px',
+  borderRadius: '10px',
+  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  transition: 'background-color 0.2s',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  }
+}));
 
 export default function Orders() {
     var classes = useStyles();
@@ -45,33 +72,132 @@ export default function Orders() {
     }
 
     return (
-        <Box sx={{display:"flex", alignItems:"center",paddingTop:10, paddingBottom:10 }} className={classes.mainContainer}>
-            {
-                allOrder.map((e, i) => {
-                    if (e.user === token) {
-                        return (
-                                <Box width={"80%"} key={i} sx={{ backgroundColor: "#2b2b2b", padding: "15px", marginY: "15px", borderRadius: "5px", }}>
-                                    <Box height={"60%"} sx={{ display: "flex", justifyContent: 'space-around', alignItems: 'center' }}>
-                                        <Box>
-                                            <Box variant="contained" sx={{ paddingX: "50px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder", color: "white" }} color="success">Quantity</Box>
-                                            <p style={{ textAlign: 'center', color: "white" }}>{parseInt(e.Quantity, 10)}</p>
-                                        </Box>
-                                        <Box>
-                                            <Box variant="contained" sx={{ paddingX: "50px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder", color: "white" }} color="error" >Price</Box>
-                                            <p style={{ textAlign: 'center', color: "white" }}>{parseInt(e.Price, 10)}</p>
-                                        </Box>
+        <Box sx={{
+            display: "flex", 
+            flexDirection: "column",
+            alignItems: "center",
+            paddingTop: 8,
+            paddingBottom: 4,
+            minHeight: "100vh",
+            backgroundColor: "#141313",
+            position: "relative",
+            top: 0
+        }} className={classes.mainContainer}>
+            <Box sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                width: "100%",
+                maxWidth: "800px",
+                position: "relative",
+                top: 0,
+                gap: 2
+            }}>
+                <Typography 
+                    variant="h4" 
+                    sx={{ 
+                        color: "white",
+                        marginBottom: 4,
+                        fontWeight: 600
+                    }}
+                >
+                    Your Orders
+                </Typography>
+                {
+                    allOrder.map((e, i) => {
+                        if (e.user === token) {
+                            return (
+                                <StyledOrderCard key={i}>
+                                    <Box sx={{ 
+                                        display: "flex", 
+                                        justifyContent: 'space-between', 
+                                        alignItems: 'center',
+                                        marginBottom: "20px"
+                                    }}>
+                                        <StatBox>
+                                            <Typography 
+                                                variant="h6" 
+                                                sx={{ 
+                                                    color: "#00b894",
+                                                    fontWeight: "600",
+                                                    marginBottom: "8px"
+                                                }}
+                                            >
+                                                Quantity
+                                            </Typography>
+                                            <Typography 
+                                                variant="h4" 
+                                                sx={{ 
+                                                    color: "white",
+                                                    fontWeight: "700"
+                                                }}
+                                            >
+                                                {parseInt(e.Quantity, 10)}
+                                            </Typography>
+                                        </StatBox>
+                                        <Box 
+                                            sx={{ 
+                                                width: "1px", 
+                                                height: "50px", 
+                                                backgroundColor: "#404040",
+                                                margin: "0 30px"
+                                            }}
+                                        />
+                                        <StatBox>
+                                            <Typography 
+                                                variant="h6" 
+                                                sx={{ 
+                                                    color: "#ff7675",
+                                                    fontWeight: "600",
+                                                    marginBottom: "8px"
+                                                }}
+                                            >
+                                                Price
+                                            </Typography>
+                                            <Typography 
+                                                variant="h4" 
+                                                sx={{ 
+                                                    color: "white",
+                                                    fontWeight: "700"
+                                                }}
+                                            >
+                                                ₹{e.Price}
+                                            </Typography>
+                                        </StatBox>
                                     </Box>
-                                    <Box height={"40%"} sx={{ display: "flex", justifyContent: 'space-around', alignItems: 'center' }}>
-                                        <Button value={i} onClick={remove} variant="contained" sx={{ paddingX: "40px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder", backgroundColor: "#ff0000" }} >cancel</Button>
-                                        {/* <Button variant="contained" sx={{ paddingX: "40px", fontSize: "20px", borderRadius: "10px", fontWeight: "bolder" }} color="error" >SELL</Button> */}
+                                    <Box 
+                                        sx={{ 
+                                            display: "flex", 
+                                            justifyContent: 'center',
+                                            marginTop: "15px"
+                                        }}
+                                    >
+                                        <Button 
+                                            value={i} 
+                                            onClick={remove} 
+                                            variant="contained"
+                                            startIcon={<DeleteIcon />}
+                                            sx={{ 
+                                                paddingX: "40px",
+                                                paddingY: "12px",
+                                                fontSize: "16px",
+                                                borderRadius: "10px",
+                                                fontWeight: "600",
+                                                backgroundColor: "#ff7675",
+                                                '&:hover': {
+                                                    backgroundColor: "#ff6b6b",
+                                                }
+                                            }}
+                                        >
+                                            Cancel Order
+                                        </Button>
                                     </Box>
-                                </Box>
-                            
-                        )
-                    }
-                })
-            }
+                                </StyledOrderCard>
+                            )
+                        }
+                    })
+                }
+            </Box>
         </Box>
-
     )
 }
