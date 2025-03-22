@@ -17,8 +17,65 @@ import { db, auth } from '../firebase/Firebaseconfig';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import {addDoc, collection, getDocs} from "firebase/firestore"
 import "./signup.css";
+import GoogleIcon from '@mui/icons-material/Google';
 
-const defaultTheme = createTheme();
+const theme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#00b894',
+    },
+    secondary: {
+      main: '#00cec9',
+    },
+    background: {
+      default: '#141313',
+      paper: '#2b2b2b',
+    },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: '10px',
+          fontWeight: 600,
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: '10px',
+            '& fieldset': {
+              borderColor: '#404040',
+            },
+            '&:hover fieldset': {
+              borderColor: '#00b894',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#00b894',
+            },
+            '& input': {
+              color: '#fff',
+            }
+          },
+          '& .MuiInputLabel-root': {
+            color: '#b2bec3',
+            '&.Mui-focused': {
+              color: '#00b894',
+            }
+          }
+        },
+      },
+    },
+  },
+});
+
 const provider = new GoogleAuthProvider();
 
 export default function Signup() {
@@ -82,24 +139,61 @@ export default function Signup() {
         });
     };
     return (
-        <ThemeProvider theme={defaultTheme}>
-            <Container component="main" maxWidth="xs">
-                <CssBaseline />
+        <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Container 
+                component="main" 
+                maxWidth="xs"
+                sx={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    paddingTop: '80px',
+                    paddingBottom: '80px'
+                }}
+            >
                 <Box
                     sx={{
-                        marginTop: 8,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
+                        backgroundColor: '#2b2b2b',
+                        padding: '40px',
+                        borderRadius: '20px',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                     }}
                 >
-                    <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
-                        <LockOutlinedIcon />
+                    <Avatar 
+                        sx={{ 
+                            m: 1, 
+                            bgcolor: '#00b894',
+                            width: 56,
+                            height: 56
+                        }}
+                    >
+                        <LockOutlinedIcon sx={{ fontSize: 32 }} />
                     </Avatar>
-                    <Typography component="h1" variant="h5">
-                        Sign Up
+                    <Typography 
+                        component="h1" 
+                        variant="h4" 
+                        sx={{ 
+                            color: '#fff',
+                            fontWeight: 600,
+                            mb: 3
+                        }}
+                    >
+                        Create Account
                     </Typography>
-                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                    <Box 
+                        component="form" 
+                        onSubmit={handleSubmit} 
+                        noValidate 
+                        sx={{ 
+                            mt: 1,
+                            width: '100%'
+                        }}
+                    >
                         <TextField
                             margin="normal"
                             required
@@ -124,31 +218,65 @@ export default function Signup() {
                             type="submit"
                             fullWidth
                             variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
+                            sx={{ 
+                                mt: 3, 
+                                mb: 2,
+                                py: 1.5,
+                                fontSize: '1.1rem',
+                                background: 'linear-gradient(45deg, #00b894 30%, #00cec9 90%)',
+                                '&:hover': {
+                                    background: 'linear-gradient(45deg, #00cec9 30%, #00b894 90%)',
+                                }
+                            }}
                         >
                             Sign Up
                         </Button>
-                        <Grid container>
+                        <Grid container justifyContent="center">
                             <Grid item>
-                                <Box onClick={()=>navigate('/')} variant="body2">
-                                    {"Already have an account? Sign In"}
-                                </Box>
+                                <Typography 
+                                    onClick={()=>navigate('/')} 
+                                    sx={{ 
+                                        color: '#00b894',
+                                        cursor: 'pointer',
+                                        '&:hover': {
+                                            textDecoration: 'underline'
+                                        }
+                                    }}
+                                >
+                                    Already have an account? Sign In
+                                </Typography>
                             </Grid>
                         </Grid>
                     </Box>
                 </Box>
-                <Box WidthFull sx={{display:"flex", alignItems:"center", justifyContent:"center"}}>
+
+                <Box 
+                    sx={{
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        mt: 3
+                    }}
+                >
                     <Button
                         onClick={signup}
                         variant="contained"
-                        sx={{ mt: 3, mb: 2, position: "absolute", bottom: 20 }}
+                        startIcon={<GoogleIcon />}
+                        sx={{ 
+                            py: 1.5,
+                            px: 4,
+                            fontSize: '1.1rem',
+                            backgroundColor: '#fff',
+                            color: '#000',
+                            '&:hover': {
+                                backgroundColor: '#f5f5f5',
+                            }
+                        }}
                     >
                         Sign Up with Google
                     </Button>
                 </Box>
-
             </Container>
-
         </ThemeProvider>
     );
 }
